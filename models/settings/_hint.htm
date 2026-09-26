@@ -1,0 +1,18 @@
+<div class="callout callout-info no-subheader">
+    <div class="header">
+        <i class="icon-info"></i>
+        <h3>Using reCAPTCHA requires an API key pair from Google</h3>
+    </div>
+    <div class="content">
+        <p>
+            <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener">Sign up for an API key pair</a>
+            to use with this website. The key pair consists of a site key and a secret key, the secret key should be kept safe.
+        </p>
+        <p>
+            <strong>Important:</strong> The key pair version must match the reCAPTCHA version used by the site.
+            A v3 key pair cannot be used with v2 widgets, or vice versa. When developing locally, Google provides a
+            <a href="https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do" target="_blank" rel="noopener">test key pair</a>
+            that always passes, or set <code>RECAPTCHA_ENABLED=false</code> in the environment to bypass verification entirely.
+        </p>
+    </div>
+</div>

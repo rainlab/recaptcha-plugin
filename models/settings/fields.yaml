@@ -1,0 +1,39 @@
+# ===================================
+#  Field Definitions
+# ===================================
+
+fields:
+
+    _hint:
+        type: hint
+        path: $/rainlab/recaptcha/models/settings/_hint.htm
+
+    enabled:
+        label: Enabled
+        comment: Render reCAPTCHA widgets and verify submitted tokens. Can be overridden with the RECAPTCHA_ENABLED environment variable.
+        type: switch
+
+    site_key:
+        label: Site Key
+        span: auto
+
+    secret_key:
+        label: Secret Key
+        span: auto
+
+    lang:
+        label: Language
+        comment: Forces the widget to render in a specific language. Detects the language automatically when unspecified.
+        type: dropdown
+        span: auto
+
+    _section_v3:
+        label: reCAPTCHA v3
+        comment: These settings only apply to score-based reCAPTCHA v3 keys.
+        type: section
+
+    min_score:
+        label: Minimum Score
+        comment: Submissions scoring below this threshold are rejected (reCAPTCHA v3 only). A value between 0 and 1.
+        type: number
+        span: auto

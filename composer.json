@@ -1,0 +1,12 @@
+{
+    "name": "rainlab/recaptcha-plugin",
+    "type": "october-plugin",
+    "description": "Protects website forms using the Google reCAPTCHA service.",
+    "homepage": "https://octobercms.com",
+    "keywords": ["october", "cms", "octobercms", "recaptcha", "captcha", "spam"],
+    "license": "MIT",
+    "require": {
+        "php": ">=8.0",
+        "google/recaptcha": "^1.3"
+    }
+}

@@ -1,0 +1,94 @@
+{% set buttonText = __SELF__.property('button_text') %}
+{% set buttonClass = __SELF__.property('button_class') %}
+
+{% if not __SELF__.isEnabled %}
+
+    <button type="submit" class="{{ buttonClass }}" data-attach-loading>
+        {{ buttonText }}
+    </button>
+
+{% elseif __SELF__.siteKey is empty %}
+
+    <div class="alert alert-danger">
+        {{ __('The reCAPTCHA site key is missing. Check the reCAPTCHA settings in the backend.') }}
+    </div>
+
+{% elseif __SELF__.property('type') == 'v3' %}
+
+    {% if __SELF__.property('load_script') %}
+        <script src="https://www.google.com/recaptcha/api.js?render={{ __SELF__.siteKey }}"></script>
+    {% endif %}
+    <script>
+        (function() {
+            function refreshToken() {
+                grecaptcha.ready(function() {
+                    grecaptcha.execute('{{ __SELF__.siteKey }}', { action: '{{ __SELF__.property('action_name')|e('js') }}' })
+                        .then(function(token) {
+                            document.getElementById('recaptchaResponse{{ __SELF__.id }}').value = token;
+                        });
+                });
+            }
+
+            // Fetch a token on page load, then refresh it periodically so it
+            // does not expire while the form is being filled out
+            addEventListener('DOMContentLoaded', function() {
+                refreshToken();
+                setInterval(refreshToken, 110000);
+            });
+        })();
+    </script>
+    <input type="hidden" name="g-recaptcha-response" id="recaptchaResponse{{ __SELF__.id }}" value="" />
+    <div class="form-error-message" data-validate-for="g-recaptcha-response"></div>
+    <button type="submit" class="{{ buttonClass }}" data-attach-loading>
+        {{ buttonText }}
+    </button>
+
+{% elseif __SELF__.property('type') == 'visible' %}
+
+    {% if __SELF__.property('load_script') %}
+        <script src="https://www.google.com/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
+    {% endif %}
+    <div class="g-recaptcha" data-sitekey="{{ __SELF__.siteKey }}"></div>
+    <div class="form-error-message" data-validate-for="g-recaptcha-response"></div>
+    <button type="submit" class="{{ buttonClass }}" data-attach-loading>
+        {{ buttonText }}
+    </button>
+
+{% elseif __SELF__.property('type') == 'invisible' %}
+
+    {% if __SELF__.property('load_script') %}
+        <script src="https://www.google.com/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
+    {% endif %}
+    <script>
+        function recaptchaSubmit{{ __SELF__.id }}() {
+            var button = document.getElementById('recaptcha{{ __SELF__.id }}'),
+                form = button ? button.closest('form') : null;
+
+            if (form && form.checkValidity()) {
+                form.requestSubmit();
+            }
+            else if (form) {
+                form.reportValidity();
+            }
+
+            grecaptcha.reset();
+        }
+    </script>
+    <div class="form-error-message" data-validate-for="g-recaptcha-response"></div>
+    <button
+        type="button"
+        id="recaptcha{{ __SELF__.id }}"
+        class="g-recaptcha {{ buttonClass }}"
+        data-sitekey="{{ __SELF__.siteKey }}"
+        data-callback="recaptchaSubmit{{ __SELF__.id }}"
+        data-attach-loading>
+        {{ buttonText }}
+    </button>
+
+{% else %}
+
+    <div class="alert alert-danger">
+        {{ __('The reCAPTCHA type is invalid. Check the component configuration.') }}
+    </div>
+
+{% endif %}
