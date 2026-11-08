@@ -1,11 +1,8 @@
-{% set buttonText = __SELF__.property('button_text') %}
-{% set buttonClass = __SELF__.property('button_class') %}
-
+{#
+ # Rendered inside a form that keeps its own submit button. A submit without a token
+ # is held back while Google checks the visitor, then goes ahead with the token
+ #}
 {% if not __SELF__.isEnabled %}
-
-    <button type="submit" class="{{ buttonClass }}" data-attach-loading>
-        {{ buttonText }}
-    </button>
 
 {% elseif __SELF__.siteKey is empty %}
 
@@ -15,25 +12,24 @@
 
 {% elseif __SELF__.property('type') == 'v3' %}
 
-    {% if __SELF__.property('load_script') %}
-        <script src="https://www.google.com/recaptcha/api.js?render={{ __SELF__.siteKey }}"></script>
-    {% endif %}
+    <input type="hidden" name="g-recaptcha-response" id="recaptchaResponse{{ __SELF__.id }}" value="" />
     <script>
         // Tokens expire after two minutes and work once, so one is fetched when the
-        // form submits. The submit waits for it, then goes ahead with it
+        // form submits, then the submit goes ahead with it
         if (!window.recaptchaGuard{{ __SELF__.id }}) {
             window.recaptchaGuard{{ __SELF__.id }} = true;
 
             document.addEventListener('submit', function(event) {
                 var field = document.getElementById('recaptchaResponse{{ __SELF__.id }}'),
-                    form = field ? field.closest('form') : null;
+                    form = field ? field.closest('form') : null,
+                    submitter = event.submitter;
 
                 if (!form || event.target !== form || !window.grecaptcha) {
                     return;
                 }
 
-                // The token fetched for this submit goes through once, then is cleared
-                // after the request has read the form
+                // The token goes through once, then is cleared after the request has
+                // read the form
                 if (field.value) {
                     setTimeout(function() { field.value = ''; }, 0);
                     return;
@@ -46,23 +42,18 @@
                     grecaptcha.execute('{{ __SELF__.siteKey }}', { action: '{{ __SELF__.property('action_name')|e('js') }}' })
                         .then(function(token) {
                             field.value = token;
-                            form.requestSubmit();
+                            form.requestSubmit(submitter);
                         });
                 });
             }, true);
         }
     </script>
-    <input type="hidden" name="g-recaptcha-response" id="recaptchaResponse{{ __SELF__.id }}" value="" />
-    <div class="form-error-message" data-validate-for="g-recaptcha-response"></div>
-    <button type="submit" class="{{ buttonClass }}" data-attach-loading>
-        {{ buttonText }}
-    </button>
+    {% if __SELF__.property('load_script') %}
+        <script src="https://www.google.com/recaptcha/api.js?render={{ __SELF__.siteKey }}"></script>
+    {% endif %}
 
 {% elseif __SELF__.property('type') == 'visible' %}
 
-    {% if __SELF__.property('load_script') %}
-        <script src="https://www.google.com/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
-    {% endif %}
     <div class="g-recaptcha" id="recaptcha{{ __SELF__.id }}" data-sitekey="{{ __SELF__.siteKey }}"></div>
     <script>
         // A token works once, so the box is cleared after each submit. A second try,
@@ -87,93 +78,84 @@
             });
         }
     </script>
-    <div class="form-error-message" data-validate-for="g-recaptcha-response"></div>
-    <button type="submit" class="{{ buttonClass }}" data-attach-loading>
-        {{ buttonText }}
-    </button>
-
-{% elseif __SELF__.property('type') == 'invisible' %}
-
     {% if __SELF__.property('load_script') %}
         <script src="https://www.google.com/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
     {% endif %}
+
+{% elseif __SELF__.property('type') == 'invisible' %}
+
+    <div
+        class="g-recaptcha"
+        id="recaptcha{{ __SELF__.id }}"
+        data-sitekey="{{ __SELF__.siteKey }}"
+        data-size="invisible"
+        data-callback="recaptchaSubmit{{ __SELF__.id }}"></div>
     <script>
-        // Widgets render in page order, so this button's position among them is its
-        // widget ID. Without one, execute() and reset() act on the page's first widget
-        function recaptchaWidget{{ __SELF__.id }}() {
-            var id = Array.prototype.indexOf.call(
-                document.querySelectorAll('.g-recaptcha'),
-                document.getElementById('recaptcha{{ __SELF__.id }}')
-            );
+        if (!window.recaptchaSubmit{{ __SELF__.id }}) {
+            (function() {
+                var submitter = null;
 
-            return id < 0 ? undefined : id;
-        }
-
-        // Google calls this with a token for the button. The token is written into the
-        // form before it submits, rather than relying on Google's own field being filled
-        function recaptchaSubmit{{ __SELF__.id }}(token) {
-            var button = document.getElementById('recaptcha{{ __SELF__.id }}'),
-                form = button ? button.closest('form') : null;
-
-            if (!form) {
-                return;
-            }
-
-            var field = form.querySelector('[name="g-recaptcha-response"]');
-            if (!field) {
-                field = document.createElement('input');
-                field.type = 'hidden';
-                field.name = 'g-recaptcha-response';
-                form.appendChild(field);
-            }
-            field.value = token || '';
-
-            if (form.checkValidity()) {
-                form.requestSubmit();
-            }
-            else {
-                form.reportValidity();
-            }
-
-            // The request has read the form by now. A token works once, so the next
-            // submit asks Google for a new one
-            field.value = '';
-            grecaptcha.reset(recaptchaWidget{{ __SELF__.id }}());
-        }
-
-        // A submit without a token, eg: pressing Enter in a field, asks Google for one
-        // first, instead of sending the form with an empty response
-        if (!window.recaptchaGuard{{ __SELF__.id }}) {
-            window.recaptchaGuard{{ __SELF__.id }} = true;
-
-            document.addEventListener('submit', function(event) {
-                var button = document.getElementById('recaptcha{{ __SELF__.id }}'),
-                    form = button ? button.closest('form') : null,
-                    field = form ? form.querySelector('[name="g-recaptcha-response"]') : null;
-
-                if (!form || event.target !== form || (field && field.value)) {
-                    return;
+                function findForm() {
+                    var widget = document.getElementById('recaptcha{{ __SELF__.id }}');
+                    return widget ? widget.closest('form') : null;
                 }
 
-                event.preventDefault();
-                event.stopImmediatePropagation();
+                // Widgets render in page order, so this one's position among them is
+                // its widget ID. Without one, execute() and reset() act on the first
+                function widgetId() {
+                    var id = Array.prototype.indexOf.call(
+                        document.querySelectorAll('.g-recaptcha'),
+                        document.getElementById('recaptcha{{ __SELF__.id }}')
+                    );
 
-                if (window.grecaptcha) {
-                    grecaptcha.execute(recaptchaWidget{{ __SELF__.id }}());
+                    return id < 0 ? undefined : id;
                 }
-            }, true);
+
+                // Google calls this with the token. It goes in the form's own field,
+                // and the form submits again from the button that was used
+                window.recaptchaSubmit{{ __SELF__.id }} = function(token) {
+                    var form = findForm();
+                    if (!form) {
+                        return;
+                    }
+
+                    var field = form.querySelector('[name="g-recaptcha-response"]');
+                    if (!field) {
+                        field = document.createElement('input');
+                        field.type = 'hidden';
+                        field.name = 'g-recaptcha-response';
+                        form.appendChild(field);
+                    }
+
+                    field.value = token || '';
+                    form.requestSubmit(submitter);
+
+                    // The request has read the form by now. A token works once, so
+                    // the next submit asks Google for a new one
+                    field.value = '';
+                    grecaptcha.reset(widgetId());
+                };
+
+                document.addEventListener('submit', function(event) {
+                    var form = findForm(),
+                        field = form ? form.querySelector('[name="g-recaptcha-response"]') : null;
+
+                    if (!form || event.target !== form || !window.grecaptcha || (field && field.value)) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+
+                    submitter = event.submitter;
+                    grecaptcha.execute(widgetId());
+                }, true);
+            })();
         }
     </script>
-    <div class="form-error-message" data-validate-for="g-recaptcha-response"></div>
-    <button
-        type="button"
-        id="recaptcha{{ __SELF__.id }}"
-        class="g-recaptcha {{ buttonClass }}"
-        data-sitekey="{{ __SELF__.siteKey }}"
-        data-callback="recaptchaSubmit{{ __SELF__.id }}"
-        data-attach-loading>
-        {{ buttonText }}
-    </button>
+    {% if __SELF__.property('load_script') %}
+        <script src="https://www.google.com/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
+    {% endif %}
 
 {% else %}
 

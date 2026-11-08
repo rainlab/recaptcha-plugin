@@ -20,10 +20,6 @@
   "Include the reCAPTCHA JavaScript from Google. Disable this when the script is already included by the page.": "Include the reCAPTCHA JavaScript from Google. Disable this when the script is already included by the page.",
   "Action name": "Action name",
   "The action name reported to reCAPTCHA v3 for this form.": "The action name reported to reCAPTCHA v3 for this form.",
-  "Button text": "Button text",
-  "Text used for the form submit button.": "Text used for the form submit button.",
-  "Button CSS class": "Button CSS class",
-  "CSS classes applied to the form submit button, separated by a space.": "CSS classes applied to the form submit button, separated by a space.",
   "The reCAPTCHA verification failed. Please try again.": "The reCAPTCHA verification failed. Please try again.",
   "The reCAPTCHA site key is missing. Check the reCAPTCHA settings in the backend.": "The reCAPTCHA site key is missing. Check the reCAPTCHA settings in the backend.",
   "The reCAPTCHA type is invalid. Check the component configuration.": "The reCAPTCHA type is invalid. Check the component configuration."

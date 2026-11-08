@@ -5,7 +5,7 @@ Protects website forms using the [Google reCAPTCHA](https://www.google.com/recap
 ## Features
 
 - Supports reCAPTCHA v2 checkbox, v2 invisible and v3 score-based keys
-- Drop-in `recaptcha` component that renders the widget and submit button
+- A `recaptcha` component that protects any form, keeping the form's own submit button
 - Server-side verification helper and validation rule
 - Can be disabled per environment for local development
 
@@ -25,21 +25,25 @@ To use reCAPTCHA, [sign up for an API key pair](https://www.google.com/recaptcha
 
 ## Component
 
-Attach the `recaptcha` component to a page or layout and render it inside a form. The component renders the widget along with the submit button for the form.
+Attach the `recaptcha` component to a page or layout and render it inside a form, next to the form's own submit button.
 
 ```ini
 [recaptcha]
 type = "v3"
 action_name = "contactForm"
-button_text = "Send Message"
-button_class = "btn btn-primary"
 ==
-<form data-request="onSubmitContactForm">
+<form data-request="onSubmitContactForm" data-request-validate>
     <!-- Form fields -->
 
     {% component 'recaptcha' %}
+    <div data-validate-for="g-recaptcha-response"></div>
+    <button type="submit" class="btn btn-primary">Send Message</button>
 </form>
 ```
+
+The form submits as usual, by clicking the button or pressing Enter in a field. For the `v3` and `invisible` types, the component holds the submit back while Google checks the visitor, then sends the form with the token in the `g-recaptcha-response` field. The `visible` type renders the checkbox where the component is placed.
+
+The component doesn't render an error message, so place an element with `data-validate-for="g-recaptcha-response"` where the verification error should show.
 
 The following component properties are supported.
 
@@ -48,8 +52,6 @@ The following component properties are supported.
 | `type` | widget type: `visible`, `invisible` or `v3` | `v3` |
 | `load_script` | include the reCAPTCHA JavaScript from Google | `true` |
 | `action_name` | action name reported to reCAPTCHA v3 | `submitForm` |
-| `button_text` | text for the form submit button | `Submit` |
-| `button_class` | CSS classes applied to the submit button | |
 
 ## Server-Side Verification
 
@@ -57,7 +59,7 @@ The submitted token must be verified server-side. There are several ways to veri
 
 ### Validation Rule
 
-Use the `RecaptchaValidator` rule to validate the `g-recaptcha-response` field posted by v2 checkbox and v3 widgets.
+Use the `RecaptchaValidator` rule to validate the `g-recaptcha-response` field posted with the form.
 
 ```php
 use Validator;
@@ -107,7 +109,7 @@ Set the following in the environment configuration to bypass rendering and verif
 RECAPTCHA_ENABLED=false
 ```
 
-When disabled, the component renders a plain submit button without loading any external scripts, and all server-side verification passes automatically.
+When disabled, the component renders nothing and loads no external scripts, so the form submits as it would without it, and all server-side verification passes automatically.
 
 Alternatively, Google provides a [test key pair](https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do) that renders a real widget and always passes verification.
 
@@ -116,7 +118,7 @@ Site key: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
 Secret key: 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
 ```
 
-Test with the real widget before going live, since disabling reCAPTCHA renders a different button and skips the checks.
+Test with the real widget before going live, since disabling reCAPTCHA skips the widget and the checks.
 
 ## Content Security Policy
 

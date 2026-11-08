@@ -6,8 +6,8 @@ use RainLab\Recaptcha\Classes\Verifier;
 use RainLab\Recaptcha\Models\Settings;
 
 /**
- * Recaptcha component renders a reCAPTCHA widget inside a form,
- * including the submit button for the form.
+ * Recaptcha component renders a reCAPTCHA widget inside a form, holding
+ * the form's own submit button back until the visitor has a token.
  *
  * @package rainlab\recaptcha
  * @author Alexey Bobkov, Samuel Georges
@@ -56,20 +56,6 @@ class Recaptcha extends ComponentBase
                 'description' => 'The action name reported to reCAPTCHA v3 for this form.',
                 'type' => 'string',
                 'default' => 'submitForm',
-                'showExternalParam' => false,
-            ],
-            'button_text' => [
-                'title' => 'Button text',
-                'description' => 'Text used for the form submit button.',
-                'type' => 'string',
-                'default' => 'Submit',
-                'showExternalParam' => false,
-                'required' => true,
-            ],
-            'button_class' => [
-                'title' => 'Button CSS class',
-                'description' => 'CSS classes applied to the form submit button, separated by a space.',
-                'type' => 'string',
                 'showExternalParam' => false,
             ],
         ];
