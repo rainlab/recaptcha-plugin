@@ -116,6 +116,18 @@ Site key: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
 Secret key: 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
 ```
 
+Test with the real widget before going live, since disabling reCAPTCHA renders a different button and skips the checks.
+
+## Content Security Policy
+
+If the site sends a Content Security Policy, it must allow Google's reCAPTCHA sources. Without `connect-src`, the widget renders but never produces a token, and every submission fails verification.
+
+```
+script-src  https://www.google.com https://www.gstatic.com
+frame-src   https://www.google.com
+connect-src https://www.google.com
+```
+
 ## License
 
 This plugin is officially maintained by the October CMS team and is available under the [MIT license](LICENSE).

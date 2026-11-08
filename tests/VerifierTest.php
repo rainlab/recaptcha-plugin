@@ -111,6 +111,42 @@ class VerifierTest extends PluginTestCase
         $this->assertContains('score-threshold-not-met', $verifier->getErrorCodes());
     }
 
+    public function testVerifyChecksScoreWithoutAction()
+    {
+        Settings::set([
+            'secret_key' => 'test_secret',
+            'min_score' => 0.5
+        ]);
+
+        // The validator rule passes no action, so v3 tokens must still meet the score
+        $verifier = new Verifier($this->makeTransport(
+            '{"success": true, "score": 0.1, "action": "submitForm"}'
+        ));
+
+        $this->assertFalse($verifier->verify('suspicious-token'));
+        $this->assertEquals(['score-threshold-not-met'], $verifier->getErrorCodes());
+
+        $verifier = new Verifier($this->makeTransport(
+            '{"success": true, "score": 0.9, "action": "submitForm"}'
+        ));
+
+        $this->assertTrue($verifier->verify('good-token'));
+    }
+
+    public function testVerifyAcceptsV2ResponseWithoutScore()
+    {
+        Settings::set([
+            'secret_key' => 'test_secret',
+            'min_score' => 0.5
+        ]);
+
+        // v2 responses carry no score, so the minimum score must not reject them
+        $verifier = new Verifier($this->makeTransport('{"success": true}'));
+
+        $this->assertTrue($verifier->verify('v2-token'));
+        $this->assertEmpty($verifier->getErrorCodes());
+    }
+
     public function testVerifyChecksExpectedAction()
     {
         Settings::set('secret_key', 'test_secret');

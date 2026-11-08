@@ -33,8 +33,8 @@ class Verifier
 
     /**
      * verify checks a reCAPTCHA response token, returning true when the
-     * service is disabled. The action and score threshold are applied for
-     * score-based (v3) verification when an action name is supplied.
+     * service is disabled. A score-based (v3) token must meet the minimum
+     * score, and the expected action when an action name is supplied.
      */
     public function verify(?string $token, ?string $action = null, ?string $remoteIp = null): bool
     {
@@ -59,14 +59,25 @@ class Verifier
 
             if ($action !== null) {
                 $client->setExpectedAction($action);
-                $client->setScoreThreshold((float) Settings::get('min_score', 0.5));
             }
 
             $response = $client->verify($token, $remoteIp ?? Request::ip());
 
             $this->errorCodes = $response->getErrorCodes();
 
-            return $response->isSuccess();
+            if (!$response->isSuccess()) {
+                return false;
+            }
+
+            // Only v3 responses carry a score. The client's own threshold would
+            // reject v2 responses, which have none, so the score is checked here
+            $score = $response->getScore();
+            if ($score !== null && $score < (float) Settings::get('min_score', 0.5)) {
+                $this->errorCodes = [ReCaptcha::E_SCORE_THRESHOLD_NOT_MET];
+                return false;
+            }
+
+            return true;
         }
         catch (Exception $ex) {
             Log::error($ex);

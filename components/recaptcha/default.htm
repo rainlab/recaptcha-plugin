@@ -19,23 +19,38 @@
         <script src="https://www.google.com/recaptcha/api.js?render={{ __SELF__.siteKey }}"></script>
     {% endif %}
     <script>
-        (function() {
-            function refreshToken() {
+        // Tokens expire after two minutes and work once, so one is fetched when the
+        // form submits. The submit waits for it, then goes ahead with it
+        if (!window.recaptchaGuard{{ __SELF__.id }}) {
+            window.recaptchaGuard{{ __SELF__.id }} = true;
+
+            document.addEventListener('submit', function(event) {
+                var field = document.getElementById('recaptchaResponse{{ __SELF__.id }}'),
+                    form = field ? field.closest('form') : null;
+
+                if (!form || event.target !== form || !window.grecaptcha) {
+                    return;
+                }
+
+                // The token fetched for this submit goes through once, then is cleared
+                // after the request has read the form
+                if (field.value) {
+                    setTimeout(function() { field.value = ''; }, 0);
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
                 grecaptcha.ready(function() {
                     grecaptcha.execute('{{ __SELF__.siteKey }}', { action: '{{ __SELF__.property('action_name')|e('js') }}' })
                         .then(function(token) {
-                            document.getElementById('recaptchaResponse{{ __SELF__.id }}').value = token;
+                            field.value = token;
+                            form.requestSubmit();
                         });
                 });
-            }
-
-            // Fetch a token on page load, then refresh it periodically so it
-            // does not expire while the form is being filled out
-            addEventListener('DOMContentLoaded', function() {
-                refreshToken();
-                setInterval(refreshToken, 110000);
-            });
-        })();
+            }, true);
+        }
     </script>
     <input type="hidden" name="g-recaptcha-response" id="recaptchaResponse{{ __SELF__.id }}" value="" />
     <div class="form-error-message" data-validate-for="g-recaptcha-response"></div>
@@ -48,7 +63,30 @@
     {% if __SELF__.property('load_script') %}
         <script src="https://www.google.com/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
     {% endif %}
-    <div class="g-recaptcha" data-sitekey="{{ __SELF__.siteKey }}"></div>
+    <div class="g-recaptcha" id="recaptcha{{ __SELF__.id }}" data-sitekey="{{ __SELF__.siteKey }}"></div>
+    <script>
+        // A token works once, so the box is cleared after each submit. A second try,
+        // eg: after a validation error, asks the visitor to tick it again
+        if (!window.recaptchaGuard{{ __SELF__.id }}) {
+            window.recaptchaGuard{{ __SELF__.id }} = true;
+
+            document.addEventListener('submit', function(event) {
+                var widget = document.getElementById('recaptcha{{ __SELF__.id }}'),
+                    form = widget ? widget.closest('form') : null;
+
+                if (!form || event.target !== form || !window.grecaptcha) {
+                    return;
+                }
+
+                // Widgets render in page order, so this one's position is its widget ID
+                var id = Array.prototype.indexOf.call(document.querySelectorAll('.g-recaptcha'), widget);
+
+                setTimeout(function() {
+                    try { grecaptcha.reset(id < 0 ? undefined : id); } catch (e) {}
+                }, 0);
+            });
+        }
+    </script>
     <div class="form-error-message" data-validate-for="g-recaptcha-response"></div>
     <button type="submit" class="{{ buttonClass }}" data-attach-loading>
         {{ buttonText }}
@@ -60,18 +98,70 @@
         <script src="https://www.google.com/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
     {% endif %}
     <script>
-        function recaptchaSubmit{{ __SELF__.id }}() {
+        // Widgets render in page order, so this button's position among them is its
+        // widget ID. Without one, execute() and reset() act on the page's first widget
+        function recaptchaWidget{{ __SELF__.id }}() {
+            var id = Array.prototype.indexOf.call(
+                document.querySelectorAll('.g-recaptcha'),
+                document.getElementById('recaptcha{{ __SELF__.id }}')
+            );
+
+            return id < 0 ? undefined : id;
+        }
+
+        // Google calls this with a token for the button. The token is written into the
+        // form before it submits, rather than relying on Google's own field being filled
+        function recaptchaSubmit{{ __SELF__.id }}(token) {
             var button = document.getElementById('recaptcha{{ __SELF__.id }}'),
                 form = button ? button.closest('form') : null;
 
-            if (form && form.checkValidity()) {
+            if (!form) {
+                return;
+            }
+
+            var field = form.querySelector('[name="g-recaptcha-response"]');
+            if (!field) {
+                field = document.createElement('input');
+                field.type = 'hidden';
+                field.name = 'g-recaptcha-response';
+                form.appendChild(field);
+            }
+            field.value = token || '';
+
+            if (form.checkValidity()) {
                 form.requestSubmit();
             }
-            else if (form) {
+            else {
                 form.reportValidity();
             }
 
-            grecaptcha.reset();
+            // The request has read the form by now. A token works once, so the next
+            // submit asks Google for a new one
+            field.value = '';
+            grecaptcha.reset(recaptchaWidget{{ __SELF__.id }}());
+        }
+
+        // A submit without a token, eg: pressing Enter in a field, asks Google for one
+        // first, instead of sending the form with an empty response
+        if (!window.recaptchaGuard{{ __SELF__.id }}) {
+            window.recaptchaGuard{{ __SELF__.id }} = true;
+
+            document.addEventListener('submit', function(event) {
+                var button = document.getElementById('recaptcha{{ __SELF__.id }}'),
+                    form = button ? button.closest('form') : null,
+                    field = form ? form.querySelector('[name="g-recaptcha-response"]') : null;
+
+                if (!form || event.target !== form || (field && field.value)) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                if (window.grecaptcha) {
+                    grecaptcha.execute(recaptchaWidget{{ __SELF__.id }}());
+                }
+            }, true);
         }
     </script>
     <div class="form-error-message" data-validate-for="g-recaptcha-response"></div>
