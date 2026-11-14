@@ -122,12 +122,14 @@ Test with the real widget before going live, since disabling reCAPTCHA skips the
 
 ## Content Security Policy
 
-If the site sends a Content Security Policy, it must allow Google's reCAPTCHA sources. Without `connect-src`, the widget renders but never produces a token, and every submission fails verification.
+The widget loads from `www.recaptcha.net`, the address Google provides for places that can't reach `www.google.com`, such as mainland China. Verification runs on the server and still calls Google directly.
+
+If the site sends a Content Security Policy, it must allow these sources. Without `connect-src`, the widget renders but never produces a token, and every submission fails verification.
 
 ```
-script-src  https://www.google.com https://www.gstatic.com
-frame-src   https://www.google.com
-connect-src https://www.google.com
+script-src  https://www.recaptcha.net https://www.gstatic.com
+frame-src   https://www.recaptcha.net
+connect-src https://www.recaptcha.net
 ```
 
 ## License

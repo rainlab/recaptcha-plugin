@@ -49,7 +49,7 @@
         }
     </script>
     {% if __SELF__.property('load_script') %}
-        <script src="https://www.google.com/recaptcha/api.js?render={{ __SELF__.siteKey }}"></script>
+        <script src="https://www.recaptcha.net/recaptcha/api.js?render={{ __SELF__.siteKey }}"></script>
     {% endif %}
 
 {% elseif __SELF__.property('type') == 'visible' %}
@@ -79,7 +79,7 @@
         }
     </script>
     {% if __SELF__.property('load_script') %}
-        <script src="https://www.google.com/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
+        <script src="https://www.recaptcha.net/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
     {% endif %}
 
 {% elseif __SELF__.property('type') == 'invisible' %}
@@ -154,7 +154,7 @@
         }
     </script>
     {% if __SELF__.property('load_script') %}
-        <script src="https://www.google.com/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
+        <script src="https://www.recaptcha.net/recaptcha/api.js?hl={{ __SELF__.language }}" async defer></script>
     {% endif %}
 
 {% else %}
